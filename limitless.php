@@ -3,6 +3,8 @@
 
 function fire($light_name, $light_function, $light_data = false) {
 		global $status;
+		global $hub_list;
+		global $light_list;
 
 		//Setup Hub variables for the chosen light.
 		$light_hub = $light_list["$light_name"]['hub'];
@@ -22,7 +24,6 @@ function fire($light_name, $light_function, $light_data = false) {
 				$loop = 0;
 				do {
 					//require on status and then fire on command so the light is listening for
-					require_status($light_name, "on");
 					fire($light_name, "on");
 					$currentbrightness = $status["$light_name"]['brightness'];
 					$done = true;
@@ -31,7 +32,7 @@ function fire($light_name, $light_function, $light_data = false) {
 					//check that we got a valid brightness option and that we're not already where they requested
 					//TO DO: Add support for RGB/RGB+W Bulbs
 					if ($light_data > 10 || $light_data < 0 || !is_numeric($light_data)) die("Invalid option!");
-					if ($light_data == $currentbrightness) die("Already there!");
+					if ($light_data == $currentbrightness) echo("Already there!");
 
 					//We don't have a brightness set, so we're going to loop twice, the first one takes the brightness to 0
 					if (is_null($currentbrightness)) {
@@ -41,7 +42,7 @@ function fire($light_name, $light_function, $light_data = false) {
 					}
 					//We're good to go, calculate the difference between the steps.
 					else {
-						$steps = $light_options - $currentbrightness;
+						$steps = $light_data - $currentbrightness;
 					}
 
 					//Sleep for 200ms to allow light to respond
@@ -66,17 +67,12 @@ function fire($light_name, $light_function, $light_data = false) {
 							$iteration++;
 							//sleep for 100ms so the light has time to respond
 							usleep(100);
-		                } while ($iteration < $steps);
+		                		} while ($iteration < $steps);
 					}
 				} while ($done == false);
 				$status["$light_name"]['brightness'] = $light_data;
 			break;
 		}
-		
-}
-
-function require_status($light_name, $status_required) {
-	if ($status["$light_name"]['status'] != $status_required) die ("Light must be ". $status_required . "!");
 }
 
 //import user config
@@ -95,6 +91,7 @@ foreach ($light as $lights) {
 	$light_list["$name"]['group'] = $lights['group'];
 }
 
+
 //if we have a status array, then import it, otherwise carry on with no info
 //TO DO: Move to MongoDB or MySQL
 if (file_exists("status.json")) $status = json_decode(file_get_contents("status.json"), true);
@@ -104,60 +101,19 @@ else $status = array();
 $light_name = $argv[1];
 $light_function = $argv[2];
 if(isset($argv[3])) $light_options = $argv[3];
-if(isset($argv[4])) $light_options2 = $argv[4];
+
+if(is_null($light_list["$light_name"])) die("Invalid light selected!");
 
 switch ($light_function) {
 	case "on":
-		require_status($light_name, "off");
 		fire($light_name, "on");
 	break;
 	case "off":
-		require_status($light_name, "on");
 		fire($light_name, "brightness", "0");
 		fire($light_name, "off");
 	break;
 	case "brightness":
 		fire($light_name, "brightness", $light_options);
-	break;
-
-	case "strobe":
-		$to_time = time() + $light_options;
-		$speed = $light_options2;
-	        $command = "zone" . $light_list["$light_name"]['group'] . "on";
-        	exec("./sendcmd.sh $ip $port $command");
-		echo $command;
-                $i = 0;
-	       	$steps = (10 - $status["$light_name"]['brightness']) * -1;
-                while ($i < $steps) {
-                	$command = "brightnessup";
-                        exec("./sendcmd.sh $ip $port $command");
-                        $i++;
-                        echo "Step: $i \n";
-                }
-		do {
-			$command = "zone" . $light_list["$light_name"]['group'] . "off";
-                	exec("./sendcmd.sh $ip $port $command");
-			sleep($speed);
-			$command = "zone" . $light_list["$light_name"]['group'] . "on";
-                	exec("./sendcmd.sh $ip $port $command");
-			sleep($speed);
-		} while (time() < $to_time);
-
-        $command = "zone" . $light_list["$light_name"]['group'] . "on";
-        	exec("./sendcmd.sh $ip $port $command");
-		$i = 0;
-		$steps = (0 - $status["$light_name"]['brightness']) * -1;
-		echo $steps;
-		while ($i < $steps) {
-			$command = "brightnessdown";
-			exec("./sendcmd.sh $ip $port $command");
-			$i++;
-			echo "Step: $i \n";
-		}
-		$command = "zone" . $light_list["$light_name"]['group'] . "off";
-		exec("./sendcmd.sh $ip $port $command");
-		$status["$light_name"]['status'] = false;
-		$status["$light_name"]['brightness'] = 0;
 	break;
 }
 
