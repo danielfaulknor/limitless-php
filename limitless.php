@@ -32,8 +32,11 @@ function fire($light_name, $light_function, $light_data = false) {
 					//check that we got a valid brightness option and that we're not already where they requested
 					//TO DO: Add support for RGB/RGB+W Bulbs
 					if ($light_data > 10 || $light_data < 0 || !is_numeric($light_data)) die("Invalid option!");
-					if ($light_data == $currentbrightness) echo("Already there!");
-
+					if ($light_data == $currentbrightness) {
+						echo("Already there!");
+						$skip = true;
+					}
+					echo "Current: $currentbrightness \n Requested: $light_data \n";
 					//We don't have a brightness set, so we're going to loop twice, the first one takes the brightness to 0
 					if (is_null($currentbrightness)) {
 						$steps = -10;
@@ -46,27 +49,29 @@ function fire($light_name, $light_function, $light_data = false) {
 					}
 
 					//Sleep for 200ms to allow light to respond
-					usleep(200);
+					usleep(200000);
 
 					// if steps required is less than zero then it means brightness down.
-					if ($steps < 0) {
+					if ($steps < 0 && $skip == false) {
 						$steps = $steps * -1;
 						$iteration = 0;
 						do {
+							echo "Step down: $iteration \n";
 							exec("./sendcmd.sh $ip $port brightnessdown");
 							$iteration++;
 							//sleep for 100ms so the light has time to respond
-							usleep(100);
+							usleep(100000);
 						} while ($iteration < $steps);
 					}
 					// otherwise we are going up!
-					else {
+					else if ($skip == false) {
 						$iteration = 0;
 						do {
+							echo "Step up: $iteration \n";
 							exec("./sendcmd.sh $ip $port brightnessup");
 							$iteration++;
 							//sleep for 100ms so the light has time to respond
-							usleep(100);
+							usleep(100000);
 		                		} while ($iteration < $steps);
 					}
 				} while ($done == false);
