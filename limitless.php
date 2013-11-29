@@ -20,7 +20,7 @@ function fire($light_name, $light_function, $light_data = false) {
 				$status["$light_name"]['status'] = false;
 				exec("./sendcmd.sh $ip $port zone" . $light_list["$light_name"]['group'] . "off");
 			break;
-			case "brightness":
+			case "brightness_white":
 				$loop = 0;
 				do {
 					//require on status and then fire on command so the light is listening for
