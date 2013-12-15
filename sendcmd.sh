@@ -9,7 +9,7 @@ fi
 incmd="$3"
 ipaddress="$1"
 portnum="$2"
-option="$3"
+option="$4"
 
 white_allon="\x35\00\x55"
 white_alloff="\x39\00\x55"
@@ -41,8 +41,12 @@ rgbw_zone1white="\xC5\00\x55"
 rgbw_zone2white="\xC7\00\x55"
 rgbw_zone3white="\xC9\00\x55"
 rgbw_zone4white="\xCB\00\x55"
-rgbw_colour="x40\$option\x55"
-rgbw_brightness="x4E\$option\x55"
+rgbw_brightness+="\x4E\\x"
+rgbw_brightness+="$option"
+rgbw_brightness+="\x55"
+
 eval incmd=\$$incmd
+
+echo $incmd
 
 echo -n -e "$incmd" >/dev/udp/"$ipaddress"/"$portnum"

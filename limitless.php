@@ -26,7 +26,16 @@ function fire($light_name, $light_function, $light_data = false) {
 			break;
 			case "rgbw_off":
 				$status["$light_name"]['status'] = false;
-				exec("./sendcmd.sh $ip $port white_zone" . $light_list["$light_name"]['group'] . "off");
+				exec("./sendcmd.sh $ip $port rgbw_zone" . $light_list["$light_name"]['group'] . "off");
+			break;
+			case "rgbw_brightness":
+				if ($light_data >= 1 && $light_data <2) $prepend = true;
+				$brightness_requested = dechex($light_data * 6);
+				if ($light_data == 0) $brightness_requested = "01";
+				if ($prepend) $brightness_requested = "0".$brightness_requested;
+				fire($light_name, "rgbw_on");
+				usleep(100000);
+				echo exec("./sendcmd.sh $ip $port rgbw_brightness ". $brightness_requested);
 			break;
 			case "white_brightness":
 				$loop = 0;
@@ -118,27 +127,14 @@ if(is_null($light_list["$light_name"])) die("Invalid light selected!");
 
 switch ($light_function) {
 	case "on":
-		switch ($light_list[$light_name][type]) {
-			case "white":
-				fire($light_name, "white_on");
-			break;
-		}
-		
+		fire($light_name, $light_list[$light_name]["type"] . "_on");
 	break;
 	case "off":
-		switch ($light_list[$light_name][type]) {
-			case "white":
-				fire($light_name, "white_brightness", "0");
-				fire($light_name, "white_off");
-			break;
-		}
+		fire($light_name, $light_list[$light_name]["type"]."_brightness", "0");
+		fire($light_name, $light_list[$light_name]["type"]."_off");
 	break;
 	case "brightness":
-		switch ($light_list[$light_name][type]) {
-			case "white":
-				fire($light_name, "white_brightness", $light_options);
-			break;
-		}
+		fire($light_name, $light_list[$light_name]["type"]."_brightness", $light_options);
 	break;
 }
 
