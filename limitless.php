@@ -12,25 +12,42 @@ function fire($light_name, $light_function, $light_data = false) {
 		$port = $hub_list["$light_hub"]['port'];
 
 		switch ($light_function) {
-			case "on":
+			case "white_on":
 				$status["$light_name"]['status'] = true;
-				exec("./sendcmd.sh $ip $port zone" . $light_list["$light_name"]['group'] . "on");
+				exec("./sendcmd.sh $ip $port white_zone" . $light_list["$light_name"]['group'] . "on");
 			break;
-			case "off":
+			case "rgbw_on":
+				$status["$light_name"]['status'] = true;
+				exec("./sendcmd.sh $ip $port rgbw_zone" . $light_list["$light_name"]['group'] . "on");
+			break;
+			case "white_off":
 				$status["$light_name"]['status'] = false;
-				exec("./sendcmd.sh $ip $port zone" . $light_list["$light_name"]['group'] . "off");
+				exec("./sendcmd.sh $ip $port white_zone" . $light_list["$light_name"]['group'] . "off");
 			break;
-			case "brightness":
+			case "rgbw_off":
+				$status["$light_name"]['status'] = false;
+				exec("./sendcmd.sh $ip $port rgbw_zone" . $light_list["$light_name"]['group'] . "off");
+			break;
+			case "rgbw_brightness":
+				if ($light_data >= 1 && $light_data <2) $prepend = true;
+				$brightness_requested = $light_data * 6;
+				if ($brightness_requested == "60") $brightness_requested = dechex("59");
+				if ($light_data == 0) $brightness_requested = "01";
+				if ($prepend) $brightness_requested = "0".$brightness_requested;
+				fire($light_name, "rgbw_on");
+				usleep(100000);
+				echo exec("./sendcmd.sh $ip $port rgbw_brightness ". $brightness_requested);
+			break;
+			case "white_brightness":
 				$loop = 0;
 				do {
 					//require on status and then fire on command so the light is listening for
-					fire($light_name, "on");
+					fire($light_name, "white_on");
 					$currentbrightness = $status["$light_name"]['brightness'];
 					$done = true;
 					$loop++;
 
 					//check that we got a valid brightness option and that we're not already where they requested
-					//TO DO: Add support for RGB/RGB+W Bulbs
 					if ($light_data > 10 || $light_data < 0 || !is_numeric($light_data)) die("Invalid option!");
 					if ($light_data == $currentbrightness) {
 						echo("Already there!");
@@ -57,10 +74,10 @@ function fire($light_name, $light_function, $light_data = false) {
 						$iteration = 0;
 						do {
 							echo "Step down: $iteration \n";
-							exec("./sendcmd.sh $ip $port brightnessdown");
+							exec("./sendcmd.sh $ip $port white_brightnessdown");
 							$iteration++;
 							//sleep for 100ms so the light has time to respond
-							usleep(100000);
+							usleep(200000);
 						} while ($iteration < $steps);
 					}
 					// otherwise we are going up!
@@ -68,10 +85,10 @@ function fire($light_name, $light_function, $light_data = false) {
 						$iteration = 0;
 						do {
 							echo "Step up: $iteration \n";
-							exec("./sendcmd.sh $ip $port brightnessup");
+							exec("./sendcmd.sh $ip $port white_brightnessup");
 							$iteration++;
 							//sleep for 100ms so the light has time to respond
-							usleep(100000);
+							usleep(200000);
 		                		} while ($iteration < $steps);
 					}
 				} while ($done == false);
@@ -111,15 +128,16 @@ if(is_null($light_list["$light_name"])) die("Invalid light selected!");
 
 switch ($light_function) {
 	case "on":
-		fire($light_name, "on");
+		fire($light_name, $light_list[$light_name]["type"] . "_on");
 	break;
 	case "off":
-		fire($light_name, "brightness", "0");
-		fire($light_name, "off");
+		fire($light_name, $light_list[$light_name]["type"]."_brightness", "0");
+		fire($light_name, $light_list[$light_name]["type"]."_off");
 	break;
 	case "brightness":
-		fire($light_name, "brightness", $light_options);
+		fire($light_name, $light_list[$light_name]["type"]."_brightness", $light_options);
 	break;
 }
 
 file_put_contents("status.json",json_encode($status));
+
