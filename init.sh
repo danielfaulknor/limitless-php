@@ -1,3 +1,6 @@
 #!/bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-$DIR/limitlessD.py &
+PREVIOUSDIR=`pwd`
+cd $DIR
+./limitlessD.py &
+cd $PREVIOUSDIR
