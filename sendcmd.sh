@@ -47,6 +47,6 @@ rgbw_brightness+="\x55"
 
 eval incmd=\$$incmd
 
-echo $incmd
+#echo $incmd
 
 echo -n -e "$incmd" >/dev/udp/"$ipaddress"/"$portnum"

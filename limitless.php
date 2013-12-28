@@ -30,7 +30,8 @@ function fire($light_name, $light_function, $light_data = false) {
 			break;
 			case "rgbw_brightness":
 				if ($light_data >= 1 && $light_data <2) $prepend = true;
-				$brightness_requested = dechex($light_data * 6);
+				$brightness_requested = $light_data * 6;
+				if ($brightness_requested == "60") $brightness_requested = dechex("59");
 				if ($light_data == 0) $brightness_requested = "01";
 				if ($prepend) $brightness_requested = "0".$brightness_requested;
 				fire($light_name, "rgbw_on");
