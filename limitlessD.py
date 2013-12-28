@@ -3,7 +3,7 @@
 import mosquitto
 import json
 import time
-from subprocess import call
+import subprocess
 
 def on_connect(rc):
         print "Connected to MQTT"
@@ -18,7 +18,8 @@ def on_message(msg):
 		data = ""	
 
 	#print './limitless.php "' + light + '" ' + func + ' ' + data
-	call(['./limitless.php', light, func, data])
+		
+	process = subprocess.check_call(['./limitless.php', light, func, data])
 
 mqttc = mosquitto.Mosquitto("limitlessD")
 
