@@ -21,15 +21,16 @@ def on_message(msg):
 		
 	process = subprocess.check_call(['./limitless.php', light, func, data])
 
-mqttc = mosquitto.Mosquitto("limitlessD")
+def main():
+	mqttc = mosquitto.Mosquitto("limitlessD")
 
-mqttc.on_message = on_message
-mqttc.on_connect = on_connect
+	mqttc.on_message = on_message
+	mqttc.on_connect = on_connect
 
-mqttc.connect("127.0.0.1", 1883, 60, False)
+	mqttc.connect("127.0.0.1", 1883, 60, False)
 
-mqttc.subscribe("limitless", 0)
+	mqttc.subscribe("limitless", 0)
 
-while mqttc.loop() == 0:
-        pass
+	while mqttc.loop() == 0:
+        	pass
 

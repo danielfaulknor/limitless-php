@@ -1,2 +1,6 @@
 status.json
 config.php
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
