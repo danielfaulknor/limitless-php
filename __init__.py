@@ -1,4 +1,7 @@
 import limitlessD
 
 def main():
-	limitlessD.main()	
+	try:
+		limitlessD.main()	
+	except KeyboardInterrupt:
+		pass

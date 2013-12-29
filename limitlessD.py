@@ -4,9 +4,10 @@ import mosquitto
 import json
 import time
 import subprocess
+import os
 
 def on_connect(rc):
-        print "Connected to MQTT"
+        print "LimitlessD Connected to MQTT"
 
 def on_message(msg):
         inbound = json.loads(msg.payload)
@@ -19,7 +20,7 @@ def on_message(msg):
 
 	#print './limitless.php "' + light + '" ' + func + ' ' + data
 		
-	process = subprocess.check_call(['./limitless.php', light, func, data])
+	process = subprocess.check_call([os.path.dirname(os.path.realpath(__file__)) + '/limitless.php', light, func, data])
 
 def main():
 	mqttc = mosquitto.Mosquitto("limitlessD")

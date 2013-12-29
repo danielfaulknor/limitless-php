@@ -1,7 +1,11 @@
 #!/usr/bin/php
 <?
 
-function fire($light_name, $light_function, $light_data = false) {
+// Report simple running errors
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
+
+$dir = dirname(__FILE__);
+function fire($light_name, $light_function, $dir, $light_data = false) {
 		global $status;
 		global $hub_list;
 		global $light_list;
@@ -14,19 +18,19 @@ function fire($light_name, $light_function, $light_data = false) {
 		switch ($light_function) {
 			case "white_on":
 				$status["$light_name"]['status'] = true;
-				exec("./sendcmd.sh $ip $port white_zone" . $light_list["$light_name"]['group'] . "on");
+				exec("$dir/sendcmd.sh $ip $port white_zone" . $light_list["$light_name"]['group'] . "on");
 			break;
 			case "rgbw_on":
 				$status["$light_name"]['status'] = true;
-				exec("./sendcmd.sh $ip $port rgbw_zone" . $light_list["$light_name"]['group'] . "on");
+				exec("$dir/sendcmd.sh $ip $port rgbw_zone" . $light_list["$light_name"]['group'] . "on");
 			break;
 			case "white_off":
 				$status["$light_name"]['status'] = false;
-				exec("./sendcmd.sh $ip $port white_zone" . $light_list["$light_name"]['group'] . "off");
+				exec("$dir/sendcmd.sh $ip $port white_zone" . $light_list["$light_name"]['group'] . "off");
 			break;
 			case "rgbw_off":
 				$status["$light_name"]['status'] = false;
-				exec("./sendcmd.sh $ip $port rgbw_zone" . $light_list["$light_name"]['group'] . "off");
+				exec("$dir/sendcmd.sh $ip $port rgbw_zone" . $light_list["$light_name"]['group'] . "off");
 			break;
 			case "rgbw_brightness":
 				if ($light_data >= 1 && $light_data <2) $prepend = true;
@@ -34,15 +38,15 @@ function fire($light_name, $light_function, $light_data = false) {
 				if ($brightness_requested == "60") $brightness_requested = dechex("59");
 				if ($light_data == 0) $brightness_requested = "01";
 				if ($prepend) $brightness_requested = "0".$brightness_requested;
-				fire($light_name, "rgbw_on");
+				fire($light_name, "rgbw_on", $dir);
 				usleep(100000);
-				echo exec("./sendcmd.sh $ip $port rgbw_brightness ". $brightness_requested);
+				echo exec("$dir/sendcmd.sh $ip $port rgbw_brightness ". $brightness_requested);
 			break;
 			case "white_brightness":
 				$loop = 0;
 				do {
 					//require on status and then fire on command so the light is listening for
-					fire($light_name, "white_on");
+					fire($light_name, "white_on", $dir);
 					$currentbrightness = $status["$light_name"]['brightness'];
 					$done = true;
 					$loop++;
@@ -74,7 +78,7 @@ function fire($light_name, $light_function, $light_data = false) {
 						$iteration = 0;
 						do {
 							echo "Step down: $iteration \n";
-							exec("./sendcmd.sh $ip $port white_brightnessdown");
+							exec("$dir/sendcmd.sh $ip $port white_brightnessdown");
 							$iteration++;
 							//sleep for 100ms so the light has time to respond
 							usleep(200000);
@@ -85,7 +89,7 @@ function fire($light_name, $light_function, $light_data = false) {
 						$iteration = 0;
 						do {
 							echo "Step up: $iteration \n";
-							exec("./sendcmd.sh $ip $port white_brightnessup");
+							exec("$dir/sendcmd.sh $ip $port white_brightnessup");
 							$iteration++;
 							//sleep for 100ms so the light has time to respond
 							usleep(200000);
@@ -116,7 +120,7 @@ foreach ($light as $lights) {
 
 //if we have a status array, then import it, otherwise carry on with no info
 //TO DO: Move to MongoDB or MySQL
-if (file_exists("status.json")) $status = json_decode(file_get_contents("status.json"), true);
+if (file_exists("$dir/status.json")) $status = json_decode(file_get_contents("$dir/status.json"), true);
 else $status = array();
 
 //Parse command line
@@ -128,16 +132,16 @@ if(is_null($light_list["$light_name"])) die("Invalid light selected!");
 
 switch ($light_function) {
 	case "on":
-		fire($light_name, $light_list[$light_name]["type"] . "_on");
+		fire($light_name, $light_list[$light_name]["type"] . "_on", $dir);
 	break;
 	case "off":
-		fire($light_name, $light_list[$light_name]["type"]."_brightness", "0");
-		fire($light_name, $light_list[$light_name]["type"]."_off");
+		fire($light_name, $light_list[$light_name]["type"]."_brightness", $dir, "0");
+		fire($light_name, $light_list[$light_name]["type"]."_off", $dir);
 	break;
 	case "brightness":
-		fire($light_name, $light_list[$light_name]["type"]."_brightness", $light_options);
+		fire($light_name, $light_list[$light_name]["type"]."_brightness", $dir, $light_options);
 	break;
 }
 
-file_put_contents("status.json",json_encode($status));
+file_put_contents("$dir/status.json",json_encode($status));
 
